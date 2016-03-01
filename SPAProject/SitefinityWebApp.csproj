@@ -901,9 +901,7 @@
     <Content Include="App_Data\RadSpell\en-US.tdf" />
     <Content Include="App_Data\RadSpell\fr-FR.tdf" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Data\Sitefinity\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="App_Data\GeoLocation\GeoLiteCity.dat" />
     <Content Include="ResourcePackages\Bootstrap\MVC\Views\Comments\Comments.Default.cshtml" />
@@ -1144,6 +1142,29 @@
     <Content Include="SampleTemplate.cshtml">
       <Generator>RazorGenerator</Generator>
     </Content>
+    <Content Include="App_Data\Sitefinity\Configuration\AnalyticsConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\CommentsModuleConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\ContentViewConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\ControlsConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\DataConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\DigitalExperienceCloudConnectorConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\DynamicModulesConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\FormsConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\ForumsConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\LibrariesConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\NewsConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\NewsConfig.contentViewControls.NewsBackend.views.NewsBackendDuplicate.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\NewsConfig.contentViewControls.NewsBackend.views.NewsBackendEdit.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\NewsConfig.contentViewControls.NewsBackend.views.NewsBackendInsert.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\NewsConfig.contentViewControls.NewsBackend.views.NewsBackendPreview.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\NewsConfig.contentViewControls.NewsBackend.views.NewsBackendVersionPreview.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\PagesConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\ProjectConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\SecurityConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\SystemConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\ToolboxesConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\VirtualPathSettingsConfig.config" />
+    <Content Include="App_Data\Sitefinity\Configuration\WorkflowConfig.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="OpenAccessNuget.targets" />
