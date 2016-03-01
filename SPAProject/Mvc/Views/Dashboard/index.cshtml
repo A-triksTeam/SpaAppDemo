@@ -1,0 +1,443 @@
+﻿@model SitefinityWebApp.Mvc.Models.DashboardModels.DashboardModel
+@using Telerik.Sitefinity.Frontend.Mvc.Helpers
+@using Telerik.Sitefinity.Modules.Pages
+@using System.Web.Mvc.Ajax
+
+@Html.Script(ScriptRef.JQuery)
+@Html.Script(ScriptRef.KendoAll)
+
+<div class="dashboard-wrapper">
+    <div class="placeholders-area">
+        @foreach(var control in Model.dashboardControlsCollection)
+        {
+            <div class="target-panel" style="height: auto; border: none">
+                 <div class="wrapper">
+                     <img src="@control.WidgetThumbnail" />
+                     <span class="remove">Remove</span>
+                     <p style="display: none" data-widgettype="@control.WidgetType" data-partiallocation="@control.PartialLocation" data-position="@control.Position"></p>
+                     <div class="view-container"></div>
+                 </div>
+            </div> 
+        }
+    </div>
+    <div class="side-panel">
+        <div class="fixed">
+        @foreach(var control in Model.controlsCollection)
+        {                      
+            <div class="widget-container draggable" data-iswidgetdropped="@control.IsWidgetDropped">
+                <img src="@control.WidgetThumbnail" alt="@control.WidgetName + image" />
+                <h3>@control.WidgetName</h3>
+                <p style="display: none" data-widgettype="@control.WidgetType" data-partiallocation="@control.PartialLocation"></p>
+            </div>
+        }  
+        </div>      
+    </div>
+
+    <br class="clear" />
+</div>
+<div class="btnWrapper">
+    <hr />
+    <input type="button" value="Save dashboard" onclick="callSubmit()" class="btn" data-url="@Url.Action("Submit")" />
+    <p class="message" id="submitResultMessage"></p>
+</div>
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        var draggables = $(".side-panel .draggable");
+        initializeDraggables(draggables);
+
+        if ($(".placeholders-area").html().trim() === "") {
+            addTextToPlaceholdersArea();
+        }
+        else {
+            runTargetPanelPartials();
+            addRemoveClickEvent();
+        }
+
+        //Subscribes to javascript event to monitor if the result message paragraph is updated (when the Save button is clicked). 
+        $('.message').bind("DOMSubtreeModified", function () {
+            //remove message after 5 secs
+            setTimeout(function () {
+                $("#submitResultMessage").html("");
+            }, 5000);
+        });
+
+    });
+
+    //adds the default text to the placeholders area
+    function addTextToPlaceholdersArea() {
+        $(".placeholders-area").html("<h2>Add widgets here</h2>");
+    };
+
+    //initializes the widget boxes on the right side bar
+    //isRemoved is passed only when Remove button is clicked.
+    function initializeDraggables(draggables, isRemoved) {
+
+        $.each(draggables, function (key, draggable) {
+            var $widget = $(draggable);
+            $widget.kendoDraggable({
+                hint: function () {
+                    return $(this.element).clone();
+                },
+                dragstart: draggableOnDragStart,
+                dragend: draggableOnDragEnd
+            });
+
+            //if the widget is removed via the Remove button we do not detach from the drag'n'drop events so we stop execution here.
+            if (isRemoved) {
+                return;
+            }
+
+            var isWidgetDropped = $widget.attr('data-iswidgetdropped').toLowerCase() === 'true';
+            if (isWidgetDropped) {
+                $widget.off(); //detach events (it works here...)   
+                $widget.css("opacity", 0.3);
+            }
+        });
+
+    };
+
+    //called when widgets are loaded first time to pull partial views associated with each widget 
+    //(data-partiallocation attribute provides the url of the partial view action)
+    function runTargetPanelPartials() {
+
+        var wrapper = $('.target-panel .wrapper');
+        $.each(wrapper, function (key, val) {
+            $(val).find(".view-container").load(window.location.pathname + $(val).find('p').attr('data-partiallocation'))
+        });
+
+    }
+
+    //adds a click event to the Remove button
+    function addRemoveClickEvent() {
+
+        $(".placeholders-area").on("click", ".remove", function () {
+            var isRemoved = true;
+            var widgetType = $(this.parentElement).find('p').attr('data-widgettype');
+            var sideWidget = $(".side-panel p[data-widgettype='" + widgetType + "']").parent();
+            sideWidget.css("opacity", 1);
+
+            initializeDraggables(sideWidget, isRemoved);
+            this.parentElement.parentElement.remove();
+
+            if ($(".placeholders-area").html().trim() === "") {
+                addTextToPlaceholdersArea();
+            }
+            else {
+                reCalculatePositions();
+            }
+        });
+
+    };
+
+    //calculates the possitions of the dropped widgets and stores them in custom attribute
+    function reCalculatePositions() {
+
+        var controls = $(".target-panel .wrapper");
+        for (var i = 0; i < controls.length; i++) {
+            $(controls[i]).find('p').attr('data-position', i + 1);
+        }
+
+    };
+
+    //sets up the target location with the dropped widget
+    function setupDropTarget(e) {
+
+        var draggableElement = $(e.draggable.element);
+
+        var image = draggableElement.find('img');
+        var imageSrc = image.attr('src');
+        var str1 = ".tmb-custom";
+        var fixedUrl = imageSrc.replace(str1, '');
+        var widgetType = draggableElement.find('p').attr('data-widgettype');
+        var partialLocation = draggableElement.find('p').attr('data-partiallocation');
+
+        //easier to read when formatted this way
+        var htmlForInsertion = '<div class="wrapper">' +
+                                    '<img src="' + fixedUrl + '" />' +
+                                    '<span class="remove">Remove</span>' +
+                                    '<p style="display: none" data-widgettype="' + widgetType + '" data-partiallocation="' + partialLocation + '"></p>' +
+                                    '<div class="view-container">' +
+                               '</div>';
+
+        var dropTarget = e.dropTarget;
+        dropTarget.html(htmlForInsertion);
+        dropTarget.removeClass("greyBG");
+        dropTarget.css({ "height": "auto", "border": "none" });
+        dropTarget.find(".view-container").load(window.location.pathname + e.draggable.element.find('p').attr('data-partiallocation'));
+
+        //BUG:Events still fire after .off(). 
+        //Can't figure out why those are not being removed from placeholder
+        dropTarget.off();
+
+    };
+
+    //adds a placeholder/drop-target for the draggable to be placed in
+    function initializePlaceholder() {
+        var htmlForInsertion = '<div class="target-panel">Drop here</div>';
+        var placeholdersArea = $(".placeholders-area");
+
+        if (placeholdersArea.html() == "") {
+            //if there are no widgets dropped yet
+            placeholdersArea.html(htmlForInsertion);
+        }
+        else {
+            //else generate drop target/placeholder after the last placeholder
+            placeholdersArea.last().append(htmlForInsertion);
+        }
+
+        attachEventsToDropTarget();
+    };
+
+    //Adds DragEnter, DragLeave and OnDrop event listeners to the lastly generated drop target/placeholder
+    function attachEventsToDropTarget() {
+        $(".placeholders-area > .target-panel").last().kendoDropTarget({
+            dragenter: droptargetOnDragEnter,
+            dragleave: droptargetOnDragLeave,
+            drop: droptargetOnDrop
+        });
+    };
+
+    //start: draggable and target events
+
+    //triggers when a widget from the sidebar has started being dragged
+    function draggableOnDragStart(e) {
+        //if there are no widgets dropped yet, removes the "Add widgets here" text
+        if ($(".placeholders-area").html() == "<h2>Add widgets here</h2>") {
+            $(".placeholders-area").html("");
+        }
+
+        initializePlaceholder();
+    };
+
+    //triggered when a draggable is dropped outside of the target.
+    function draggableOnDragEnd(e) {
+        var draggable = $(".draggable");
+        $(".target-panel").last().remove();
+
+        if ($(".placeholders-area").html().trim() === "") {
+            addTextToPlaceholdersArea();
+        }
+    };
+
+    //executed when mouse with draggable element hovers over the drop target/placeholder
+    function droptargetOnDragEnter(e) {
+        $(e.dropTarget).addClass("greyBG");
+    };
+
+    //executed when mouse with draggable element hovers out of drop target/placeholder
+    function droptargetOnDragLeave(e) {
+        $(e.dropTarget).removeClass("greyBG");
+    };
+
+    //executed when draggable is dropped in the target
+    function droptargetOnDrop(e) {
+        //in case there is text/html in the drop target that is different than "Drop here" message end the execution
+        //this means that there is already a widget in the placeholder
+        if ($(e.dropTarget).text() != "" && $(e.dropTarget).text() != "Drop here") {
+            e.dropTarget.removeClass("greyBG");
+            return;
+        }
+
+        //remove events from the side bar widget so it cannot be moved from its position.
+        e.draggable.destroy(); //detach events        
+        e.draggable.element.css("opacity", 0.3);
+
+        setupDropTarget(e);
+
+        reCalculatePositions();
+    };
+
+    //end: draggable and target events
+
+    //called when the submit button is clicked
+    function callSubmit() {
+
+        //acquire all controls dropped on the dashboard and collect their data
+        var controls = $(".target-panel .wrapper");
+        var controlsData = [];
+        for (var i = 0; i < controls.length; i++) {
+            var $control = $(controls[i]);
+            var controlProps = {
+                WidgetThumbnail: $control.find('img').attr('src'),
+                WidgetType: $control.find('p').attr('data-widgettype'),
+                PartialLocation: $control.find('p').attr('data-partiallocation'),
+                Position: $control.find('p').attr('data-position')
+            };
+            controlsData.push(controlProps);
+        }
+
+        //push collected data via service to partial view of the controller
+        $.ajax({
+            type: 'POST',
+            url: window.location.href + "/Submit",
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(controlsData),
+            success: function (result, args) {
+                $("#submitResultMessage").html(result);                
+            },
+            error: function (error) { alert(error); }
+        });
+    };
+
+</script>
+
+<style type="text/css">
+    .sfPublicWrapper {
+        height: auto;
+    }
+
+    .dashboard-wrapper {
+        width: 100%;
+    }
+
+    .placeholders-area {
+        width: 79%;
+        max-width: 100%;
+        max-height: 100%;
+        text-align: center;
+    }
+
+        .placeholders-area h2 {
+            font-size: 24px;
+        }
+    
+    .side-panel {
+        width: 20%;
+    }
+
+    .placeholders-area, .side-panel {
+        float: left;
+    }
+
+    .widget-container {
+        background-color: white;
+        border: 1px dashed #b6b6b8;
+        margin-left: 20px;
+        margin-bottom: 5px;
+        text-align: center;
+        font-size: 14px;
+        height: 150px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.23), 0 3px 10px rgba(0, 0, 0, 0.16);
+    }
+
+        .widget-container h3 {
+            margin-top: 5px;
+            font-weight: 700;
+        }
+
+        .widget-container img {
+            height: 80%;
+            width: 100%;
+        }
+
+    .target-panel img {
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    .greyBG {
+        background-color: #D3D3D3;
+        text-align: center;
+    }
+
+    .painted {
+        background-color: #03a9f4;
+        color: #fff;
+    }
+
+    .target-panel {
+        height: 60px;
+        width: 100%;
+        font-size: 14px;
+        line-height: 60px;
+        cursor: default;
+        border: 1px solid #999;
+    }
+
+    .wrapper {
+        position: relative;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+        .wrapper img {
+            width: 100%;
+        }
+
+    .remove {
+        top: 1px;
+        cursor: pointer;
+        position: absolute;
+        right: 1px;
+        color: black;
+        border: 1px solid black;
+        line-height: 20px;
+        padding: 5px;
+        background: rgba(255,255,255,0.5);
+    }
+
+    .clear {
+        clear: both;
+    }
+
+    .fixed {
+        position: fixed;
+    }
+
+    .btnWrapper {
+        width: 79%;
+        max-width: 100%;
+        max-height: 100%;
+        text-align: center;
+    }
+
+    .btn {
+        /*-moz-box-shadow: 0px 0px 14px 4px #cf866c;
+        -webkit-box-shadow: 0px 0px 14px 4px #cf866c;
+        box-shadow: 0px 0px 14px 4px #cf866c;
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, #d0451b), color-stop(1, #bc3315));
+        background: -moz-linear-gradient(top, #d0451b 5%, #bc3315 100%);
+        background: -webkit-linear-gradient(top, #d0451b 5%, #bc3315 100%);
+        background: -o-linear-gradient(top, #d0451b 5%, #bc3315 100%);
+        background: -ms-linear-gradient(top, #d0451b 5%, #bc3315 100%);
+        background: linear-gradient(to bottom, #d0451b 5%, #bc3315 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#d0451b', endColorstr='#bc3315',GradientType=0);*/
+        background-color: #d0451b;
+        -moz-border-radius: 3px;
+        -webkit-border-radius: 3px;
+        border-radius: 3px;
+        display: inline-block;
+        cursor: pointer;
+        color: #ffffff;
+        font-family: Arial;
+        font-size: 24px;
+        padding: 10px 40px;
+        text-decoration: none;
+        text-shadow: 1px 1px 20px #854629;
+        left:50%;
+        margin-top : 20px;
+    }
+
+        .btn:hover {
+            /*background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, #bc3315), color-stop(1, #d0451b));
+            background: -moz-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+            background: -webkit-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+            background: -o-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+            background: -ms-linear-gradient(top, #bc3315 5%, #d0451b 100%);
+            background: linear-gradient(to bottom, #bc3315 5%, #d0451b 100%);
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#bc3315', endColorstr='#d0451b',GradientType=0);*/
+            background-color: #bc3315;
+        }
+
+        .btn:active {
+            top: 1px;
+        }
+    .message {
+        padding-top:20px;
+        font-size:20px;
+        color: forestgreen;
+    }
+</style>

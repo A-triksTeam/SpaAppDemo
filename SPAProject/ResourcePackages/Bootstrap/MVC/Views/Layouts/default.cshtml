@@ -1,0 +1,227 @@
+﻿@using System.Web.Mvc;
+@using Telerik.Sitefinity.Frontend.Mvc.Helpers;
+@using Telerik.Sitefinity.Modules.Pages;
+@using Telerik.Sitefinity.UI.MVC;
+@using Telerik.Sitefinity.Services;
+
+<!DOCTYPE html>
+
+@*!!!ng-app is declared in the <html> tag. The reason for this is to be able to change the page's Title attribute dynamically from the HomeController!!!*@
+
+<html @Html.RenderLangAttribute() ng-app="myApp">
+<head>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta charset="utf-8" />
+    <title></title>   
+    <link rel="stylesheet"" href="http://kendo.cdn.telerik.com/2016.1.112/styles/kendo.common.min.css" type="text/css"/> 
+    <link rel="stylesheet"" href="http://kendo.cdn.telerik.com/2016.1.112/styles/kendo.default.min.css" type="text/css"/> 
+
+    @Html.Section("head")
+    @Html.StyleSheet(Url.WidgetContent("~/ResourcePackages/Bootstrap/assets/dist/css/styles.min.css"), "head") 
+    
+    @if(!SystemManager.IsDesignMode)
+    {      
+
+        @Html.Script(ScriptRef.JQuery)  
+        <script src="https://code.angularjs.org/1.4.8/angular.js" type="text/javascript"></script>
+        <script src="https://code.angularjs.org/1.4.8/angular-route.min.js" type="text/javascript"></script>
+        <script src="https://code.angularjs.org/1.4.8/angular-sanitize.min.js" type="text/javascript"></script>
+        <script src="https://code.angularjs.org/1.4.8/angular-animate.min.js" type="text/javascript"></script>
+        
+        @Html.Script("/js/myApp.js")
+        @Html.Script("/js/myAppConfig.js")    
+        @Html.Script("/js/myAppMainController.js")
+        @Html.Script("/js/OOTBScripts/comments-count.js")
+        @Html.Script("/js/OOTBScripts/comments-list.js")
+        @Html.Script("/js/OOTBScripts/overlay-gallery.js")
+
+    }
+
+    <style type="text/css">
+        .relativeWrapper {
+            position: relative;
+        }
+
+        .slide {
+            margin-left: auto;
+            position: absolute;
+            left: 0;
+            top: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+            .slide.ng-enter,
+            .slide.ng-leave {
+                -webkit-transition: all 0.2s linear;
+                transition: all 0.2s linear;
+            }
+
+            .slide.ng-enter {
+                /*left: 100%;*/
+                transition: 1s ease-in all;
+                transition-delay: 0.1s;
+                opacity: 0;
+            }
+
+            .slide.ng-enter-active {
+                transition: 1s ease-out all;
+                transition-delay: 0.1s;
+                /*left: 0;*/
+                opacity: 1;
+            }
+
+            .slide.ng-leave {
+                /*left: 0;*/
+                transition: 0.1s ease-in all;
+                opacity: 1;
+            }
+
+            .slide.ng-leave-active {
+                /*left: -100%;*/
+                transition: 0.1s ease-out all;
+                opacity: 0;
+            }
+
+        .mfp-with-zoom .mfp-container,
+        .mfp-with-zoom.mfp-bg {
+            opacity: 0;
+            -webkit-backface-visibility: hidden;
+            /* ideally, transition speed should match zoom duration */
+            -webkit-transition: all 0.3s ease-out;
+            -moz-transition: all 0.3s ease-out;
+            -o-transition: all 0.3s ease-out;
+            transition: all 0.3s ease-out;
+        }
+
+        .mfp-with-zoom.mfp-ready .mfp-container {
+            opacity: 1;
+        }
+
+        .mfp-with-zoom.mfp-ready.mfp-bg {
+            opacity: 0.8;
+        }
+
+        .mfp-with-zoom.mfp-removing .mfp-container,
+        .mfp-with-zoom.mfp-removing.mfp-bg {
+            opacity: 0;
+        }
+
+        .loading-scr {
+            position: fixed;
+            background-color: #E7E7E7;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 99;
+        }
+
+        .center-wrp {
+            text-align: center;
+            width: 400px;
+            height: 300px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin-top: -100px;
+            margin-left: -200px;
+        }
+
+            .center-wrp img {
+                height: 200px;
+                width: auto;
+            }
+
+            .center-wrp h2 {
+                position: relative;
+            }
+
+        #progressBar {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    </style>   
+
+</head>
+
+<body>
+    @Html.Section("top")
+
+    <div class="sfPublicWrapper" id="PublicWrapper">
+        @Html.SfPlaceHolder("Contentplaceholder1")        
+    </div>
+
+    @* Inline editing scripts and helpers. They should be available only when inline editing is possible. *@
+    @if (Html.ShouldRenderInlineEditing())
+    {
+        @Html.Script(ScriptRef.MicrosoftAjax, "top")
+        @Html.Script(ScriptRef.MicrosoftAjaxCore, "top")
+        @Html.Script(ScriptRef.JQuery, "top")
+
+        @Html.Script(Url.EmbeddedResource("Telerik.Sitefinity.Resources.Reference", "Telerik.Sitefinity.Resources.Scripts.jquery.ba-outside-events.min.js"), "top")
+        @Html.Script(ScriptRef.KendoAll, "top")
+        @Html.Script(Url.EmbeddedResource("Telerik.Sitefinity.Resources.Reference", "Telerik.Sitefinity.Resources.Scripts.RequireJS.require.min.js"), "top")
+        @Html.InlineEditingManager(false)
+    }
+
+    @Html.Section("bottom")
+    @Html.Script(ScriptRef.KendoAll, "bottom")
+
+    <script type="text/javascript">        
+        startWorker();
+        
+        function startWorker() {
+            if (typeof (Worker) !== "undefined") {
+                if (typeof (w) == "undefined") {
+                    w = new Worker("/js/WarmupWorkerScript/WarmerWorker.js");
+                }
+
+                //This is the loading screen template
+                $('body').prepend('<div class="loading-scr">' +
+                                      '<div class="center-wrp">' +
+                                        '<div id="progressbar"></div>'+
+                                         '<h2>LOADING...</h2>' +
+                                         '<img src="http://alfa.gifs-planet.com/new/4426.gif" class="load-img"/>' + //This gif may at some point be removed from its server :D
+                                      '</div>' +
+                                  '</div>');                
+               
+                //Ugh... getting the page urls from the navigation element. Am I crazy!!!!.
+                var hrefs = new Array();
+                var allLis = $('.nav li').each(function () {
+                    hrefs.push($(this).find('a').attr('href'));
+                });
+                
+                //Progress bar setup
+                var pb = $("#progressbar");
+                pb.kendoProgressBar({
+                    min: 0,
+                    max: hrefs.length,
+                    type: "percent",
+                    complete: onComplete
+                }).data("kendoProgressBar");
+                
+                pb.data("kendoProgressBar").value(0);
+                
+                //Sends all urls to be processed by the worker
+                w.postMessage(hrefs);
+                
+                //This event handler is executed for each page that is processed in the worker.
+                w.onmessage = function (event) {
+                
+                    //We increase the value of the progress bar for each page that gets processed.
+                    var progressBar = $('#progressbar').data('kendoProgressBar');
+                    progressBar.value(event.data.length);
+                };
+            }
+        }
+        
+        //When progress bar reaches 100% onComplete event is called. In the event we remove the loading screen from the DOM
+        function onComplete(e) {
+            $('.loading-scr').fadeOut(300, function () { $(this).remove(); });
+        }
+    </script>
+</body>
+</html>

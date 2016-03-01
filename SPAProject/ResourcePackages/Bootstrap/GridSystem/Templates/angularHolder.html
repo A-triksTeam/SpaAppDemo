@@ -1,0 +1,14 @@
+<!--The element with class relativeWrapper is not mandatory. It is used to hold the SPA presentation part in a certain place, but there are other ways this can be achieved via CSS.
+It was the best and straightforward method for this specific demo project.-->
+<div class="relativeWrapper">
+
+    <!--This is the ng-view element into which the parsed page HTML is being injected via the ng-bind-html template declared in ~/js/myAppConfig.js file.-->
+    <div class="row" data-sf-element="Row" ng-view >
+
+        <!--The div with myholder class is where the HTML from a page is taken from. In the end result (when the page's html is obtained and injected), this div is not present anymore.
+        This layout widget is construced so that a user can define which area of a page/page template will be dynamic SPA with the drop of a single layout control. However
+        this can be deconstructed into 2 widgets - 1 for the ng-view and one for myholder divs. This can provide even more flexibility.-->
+        <div class="sf_colsIn col-md-12 myholder" data-sf-element="Column 1" > 
+        </div>
+    </div>
+</div>
